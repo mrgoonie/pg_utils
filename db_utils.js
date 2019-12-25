@@ -7,7 +7,7 @@ const db = new Pool()
 var debug = true
 var timezone = "Asia/Saigon"
 
-function setDefaultTimezone(tz){
+function setDefaultTimezone(tz) {
   timezone = tz
 }
 
@@ -63,11 +63,11 @@ function query(str, params, cb) {
         var rows = result.rows
         // convert timezone (if any)
         rows.forEach(row => {
-          for(var k in row){
-            if(row[k] && row[k].getMonth) row[k] = moment(row.created_at).tz(timezone).format("YYYY-MM-DD HH:mm:ss")
+          for (var k in row) {
+            if (row[k] && row[k].getMonth) row[k] = moment(row.created_at).tz(timezone).format("YYYY-MM-DD HH:mm:ss")
 
             // should not return "deleted_at"
-            if(k == "deleted_at") delete row.deleted_at
+            if (k == "deleted_at") delete row.deleted_at
           }
         })
 
@@ -208,7 +208,7 @@ async function select(table, columns, options) {
     console.log(cols)
 
     for (i = 0; i < cols.length; i++) {
-      if(joinMapFrom.indexOf(cols[i]) > -1){
+      if (joinMapFrom.indexOf(cols[i]) > -1) {
         for (var k = 0; k < joinTables.length; k++) {
           for (var j = 0; j < joinCols[k].length; j++) {
             colStr += joinTables[k] + "." + joinCols[k][j] + " AS " + joinTables[k] + "_" + joinCols[k][j] + ","
@@ -254,13 +254,14 @@ async function select(table, columns, options) {
   var isDeletedAtExisted = await existed("deleted_at", table)
 
   if (options) {
-    queryStr += parseWhere(options.where, queryParams, table)
+    var whereClause = parseWhere(options.where, queryParams, table)
+    queryStr += whereClause
 
     if (isDeletedAtExisted) {
       if (countJoins > 0) {
-        queryStr += " AND " + table + ".deleted_at IS NULL"
+        queryStr += ((whereClause=="") ? " WHERE " : " AND ") + table + ".deleted_at IS NULL"
       } else {
-        queryStr += " AND deleted_at IS NULL"
+        queryStr += ((whereClause=="") ? " WHERE " : " AND ") + "deleted_at IS NULL"
       }
     }
 
@@ -416,28 +417,26 @@ function parseWhere(where, queryParams, fromTable) {
   }
 
   // if "where" is an array
-  if (where.length > 0) {
-    whereClause += " WHERE "
-    var index = 0
-    where.forEach(whereItem => {
-      if (index > 0) {
-        if (!whereItem.type || whereItem.type == "and") whereClause += " AND "
-      }
+  whereClause += " WHERE "
+  var index = 0
+  where.forEach(whereItem => {
+    if (index > 0) {
+      if (!whereItem.type || whereItem.type == "and") whereClause += " AND "
+    }
 
-      if (!whereItem.op) whereItem.op = "="
+    if (!whereItem.op) whereItem.op = "="
 
-      if (whereItem.val == null || whereItem.val == "null") {
-        whereClause += (fromTable ? (fromTable + ".") : "") + whereItem.col + " IS NULL"
-      } else if (whereItem.val == "notnull" || whereItem.val == "not_null") {
-        whereClause += (fromTable ? (fromTable + ".") : "") + whereItem.col + " IS NOT NULL"
-      } else {
-        whereClause += (fromTable ? (fromTable + ".") : "") + whereItem.col + " " + whereItem.op + " " + '$' + (queryParams.length + 1)
-        queryParams.push(whereItem.val)
-      }
+    if (whereItem.val == null || whereItem.val == "null") {
+      whereClause += (fromTable ? (fromTable + ".") : "") + whereItem.col + " IS NULL"
+    } else if (whereItem.val == "notnull" || whereItem.val == "not_null") {
+      whereClause += (fromTable ? (fromTable + ".") : "") + whereItem.col + " IS NOT NULL"
+    } else {
+      whereClause += (fromTable ? (fromTable + ".") : "") + whereItem.col + " " + whereItem.op + " " + '$' + (queryParams.length + 1)
+      queryParams.push(whereItem.val)
+    }
 
-      index++
-    })
-  }
+    index++
+  })
 
   return whereClause
 }
@@ -463,5 +462,6 @@ module.exports = {
   update,
   remove,
   count,
-  existed
+  existed,
+  setDefaultTimezone
 }
