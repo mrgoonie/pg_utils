@@ -48,6 +48,24 @@ db.select("users", "*", {
 })
 ```
 
+- Using `JOIN` syntax: 
+Join pattern: `from_table_column_name->matched_to_table_column_name(of_table_name){returned_columns}`
+(*TODO: `LEFT JOIN` and `RIGHT JOIN`)
+
+```
+// SELECT users.id, users.first_name, users.last_name, dogs.name, dogs.breed FROM users
+// INNER JOIN dogs ON users.dog_id=dogs.id
+// WHERE name LIKE '%John%'
+// LIMIT 1
+db.select("users", "id, first_name, last_name, dog_id->id(dogs){name, breed}", { limit: 1, where: {col: "name", op: "like", val:"%John%"} }).then(rows => {
+  console.log(rows[0])
+  // { id: 1, first_name: "John", last_name: "Wick", dogs_name: "Puppy", dogs_breed: "Pug" }
+}).catch(err => {
+  console.log(err)
+})
+
+```
+
 #### Count
 
 - Syntax:
