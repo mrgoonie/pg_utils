@@ -1,7 +1,5 @@
 # Node JS PostgreSQL Helper (both callback & async/await are supported)
 
-Schedule a Restful request using CRONJOB pattern: `* * * * * *`
-
 - Use with Node Postgres: <https://github.com/brianc/node-postgres>
 
 ## Documentation
